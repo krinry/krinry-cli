@@ -13,7 +13,7 @@ A multi-purpose CLI for mobile developers. Build Flutter apps on Android phones 
 ## 🚀 Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/krinry/krinry/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
 ```
 
 This will:

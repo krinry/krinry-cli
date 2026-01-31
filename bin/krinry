@@ -32,7 +32,7 @@ TOOLS_DIR="${KRINRY_HOME}/tools"
 # Verify lib directory exists
 if [[ ! -f "${LIB_DIR}/core.sh" ]]; then
     echo "Error: Cannot find krinry library at ${LIB_DIR}"
-    echo "Please reinstall: curl -fsSL https://raw.githubusercontent.com/krinry/krinry/main/install.sh | bash"
+    echo "Please reinstall: curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash"
     exit 1
 fi
 

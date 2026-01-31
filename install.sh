@@ -44,7 +44,7 @@ check_cmd() {
 
 # Install directory
 INSTALL_DIR="${HOME}/.krinry"
-REPO_URL="https://github.com/krinry/krinry.git"
+REPO_URL="https://github.com/krinry/krinry-cli.git"
 
 # Detect environment
 if is_termux; then
