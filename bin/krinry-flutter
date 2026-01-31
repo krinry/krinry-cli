@@ -4,9 +4,15 @@
 
 set -e
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$(cd "${SCRIPT_DIR}/../lib" && pwd)"
+# Get script directory (resolve symlinks)
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SCRIPT_SOURCE" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+    SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
+    [[ $SCRIPT_SOURCE != /* ]] && SCRIPT_SOURCE="$SCRIPT_DIR/$SCRIPT_SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+LIB_DIR="${SCRIPT_DIR}/../lib"
 
 # Source core library
 source "${LIB_DIR}/core.sh"
@@ -26,6 +32,7 @@ show_help() {
     echo "  doctor             Check system requirements"
     echo "  init               Initialize cloud build in Flutter project"
     echo "  build apk          Build APK using cloud (GitHub Actions)"
+    echo "  run web            Run Flutter web server (local)"
     echo ""
     echo -e "${BOLD}OPTIONS:${NC}"
     echo "  --help, -h         Show this help message"
@@ -36,6 +43,7 @@ show_help() {
     echo "  krinry-flutter doctor"
     echo "  krinry-flutter init"
     echo "  krinry-flutter build apk --release"
+    echo "  krinry-flutter run web"
     echo ""
     echo -e "${BOLD}DOCS:${NC}"
     echo "  https://github.com/krinry/krinry-flutter"
@@ -94,6 +102,11 @@ main() {
                 echo "Usage: krinry-flutter build apk [--release|--debug]"
                 exit 1
             fi
+            ;;
+        run)
+            shift
+            source "${LIB_DIR}/run.sh"
+            cmd_run "${@}"
             ;;
         *)
             print_error "Unknown command: $1"

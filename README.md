@@ -66,6 +66,17 @@ Triggers a cloud build and downloads the APK:
 3. Shows real-time build progress
 4. Downloads APK to `build/app/outputs/flutter-apk/`
 
+### Run Web Server
+
+```bash
+krinry-flutter run web
+```
+
+Runs your Flutter app as a web server locally:
+- Starts on port 8080 (by default)
+- Auto-opens browser using `termux-open-url`
+- Access from any device on the same network
+
 ## 📋 Requirements
 
 - Android phone with [Termux](https://termux.dev/)
