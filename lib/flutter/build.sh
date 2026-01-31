@@ -13,9 +13,10 @@ cmd_build() {
     local target_platform="all"
     local install_after=false
     
-    # Parse arguments
+    # Parse arguments (Flutter-like flags)
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            # Build modes
             --release)
                 build_type="release"
                 shift
@@ -28,26 +29,45 @@ cmd_build() {
                 build_type="profile"
                 shift
                 ;;
-            --split)
+            # Split options (Flutter-like)
+            --split-per-abi|--split)
                 output_type="apk-split"
                 shift
                 ;;
-            --arm64)
+            # Target platform options (Flutter-like)
+            --target-platform)
+                shift
+                if [[ -n "$1" && "$1" != --* ]]; then
+                    target_platform="$1"
+                    shift
+                else
+                    print_error "--target-platform requires a value (android-arm64, android-arm, android-x64)"
+                    exit 1
+                fi
+                ;;
+            --target-platform=*)
+                target_platform="${1#*=}"
+                shift
+                ;;
+            # Shorthand target platforms
+            --arm64|android-arm64)
                 target_platform="android-arm64"
                 shift
                 ;;
-            --arm)
+            --arm|android-arm)
                 target_platform="android-arm"
                 shift
                 ;;
-            --x64)
+            --x64|android-x64)
                 target_platform="android-x64"
                 shift
                 ;;
+            # Install after build
             --install)
                 install_after=true
                 shift
                 ;;
+            # Help
             --help|-h)
                 show_build_help
                 exit 0
@@ -218,23 +238,22 @@ show_build_help() {
     echo "  --profile   Profile build (for performance testing)"
     echo "  --release   Release build (optimized, slower)"
     echo ""
-    echo "APK OPTIONS:"
-    echo "  --split     Split APK by ABI (smaller individual files)"
-    echo "  --arm64     Build only for ARM64 devices"
-    echo "  --arm       Build only for ARM devices"
-    echo "  --x64       Build only for x64 devices"
+    echo "APK OPTIONS (same as flutter build):"
+    echo "  --split-per-abi              Split APK by ABI (smaller files)"
+    echo "  --target-platform <platform> Target specific platform:"
+    echo "                               android-arm64, android-arm, android-x64"
     echo ""
     echo "OTHER OPTIONS:"
     echo "  --install   Install APK on device after download (Termux only)"
     echo "  --help      Show this help"
     echo ""
-    echo "EXAMPLES:"
-    echo "  krinry flutter build apk                    # Debug APK"
-    echo "  krinry flutter build apk --release          # Release APK"
-    echo "  krinry flutter build apk --release --split  # Split release APKs"
-    echo "  krinry flutter build apk --release --arm64  # ARM64 only"
-    echo "  krinry flutter build appbundle --release    # Release App Bundle"
-    echo "  krinry flutter build apk --install          # Build & install"
+    echo "EXAMPLES (same as flutter build apk):"
+    echo "  krinry flutter build apk --debug"
+    echo "  krinry flutter build apk --release"
+    echo "  krinry flutter build apk --release --split-per-abi"
+    echo "  krinry flutter build apk --release --target-platform android-arm64"
+    echo "  krinry flutter build appbundle --release"
+    echo "  krinry flutter build apk --release --install"
     echo ""
 }
 
@@ -411,6 +430,15 @@ download_artifact() {
         output_dir="build/app/outputs/flutter-apk"
     fi
     ensure_dir "$output_dir"
+    
+    # Clean up old files to prevent "file exists" error
+    print_step "Cleaning old build files..."
+    if [[ "$output_type" == "appbundle" ]]; then
+        rm -f "$output_dir"/*.aab 2>/dev/null
+        rm -rf "$output_dir"/release 2>/dev/null
+    else
+        rm -f "$output_dir"/*.apk 2>/dev/null
+    fi
     
     print_step "Downloading artifact: ${artifact_name}..."
     

@@ -55,7 +55,7 @@ cmd_init() {
         app_name="app"
     fi
     
-    # Create workflow file with latest Flutter
+    # Create the complete workflow file with all options
     cat > ".github/workflows/krinry-build.yml" << 'WORKFLOW_EOF'
 name: krinry Build
 
@@ -69,8 +69,29 @@ on:
         type: choice
         options:
           - debug
+          - profile
           - release
-          - split
+      
+      output_type:
+        description: 'Output type'
+        required: true
+        default: 'apk'
+        type: choice
+        options:
+          - apk
+          - appbundle
+          - apk-split
+      
+      target_platform:
+        description: 'Target platform (APK only)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - android-arm64
+          - android-arm
+          - android-x64
 
 jobs:
   build:
@@ -91,8 +112,9 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version-file: pubspec.yaml
           cache: true
-          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:'
           cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
       
       - name: Flutter version
@@ -101,26 +123,53 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       
-      - name: Build APK
+      - name: Build
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          OUTPUT_TYPE="${{ github.event.inputs.output_type }}"
+          TARGET_PLATFORM="${{ github.event.inputs.target_platform }}"
           
-          if [ "$BUILD_TYPE" = "debug" ]; then
-            echo "Building debug APK..."
-            flutter build apk --debug
-          elif [ "$BUILD_TYPE" = "split" ]; then
-            echo "Building release split APKs..."
-            flutter build apk --release --split-per-abi
-          else
-            echo "Building release APK..."
-            flutter build apk --release
+          echo "🔨 Build Configuration:"
+          echo "  Type: $BUILD_TYPE"
+          echo "  Output: $OUTPUT_TYPE"
+          echo "  Platform: $TARGET_PLATFORM"
+          echo ""
+          
+          # Build APK
+          if [ "$OUTPUT_TYPE" = "apk" ]; then
+            if [ "$TARGET_PLATFORM" != "all" ]; then
+              echo "Building APK ($BUILD_TYPE) for $TARGET_PLATFORM..."
+              flutter build apk --$BUILD_TYPE --target-platform $TARGET_PLATFORM
+            else
+              echo "Building APK ($BUILD_TYPE)..."
+              flutter build apk --$BUILD_TYPE
+            fi
+          
+          # Build APK split per ABI
+          elif [ "$OUTPUT_TYPE" = "apk-split" ]; then
+            echo "Building split APKs ($BUILD_TYPE)..."
+            flutter build apk --$BUILD_TYPE --split-per-abi
+          
+          # Build App Bundle
+          elif [ "$OUTPUT_TYPE" = "appbundle" ]; then
+            echo "Building App Bundle ($BUILD_TYPE)..."
+            flutter build appbundle --$BUILD_TYPE
           fi
       
       - name: Upload APK
+        if: ${{ github.event.inputs.output_type == 'apk' || github.event.inputs.output_type == 'apk-split' }}
         uses: actions/upload-artifact@v4
         with:
-          name: apk-${{ github.event.inputs.build_type }}
+          name: build-${{ github.event.inputs.build_type }}-${{ github.event.inputs.output_type }}
           path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 7
+      
+      - name: Upload App Bundle
+        if: ${{ github.event.inputs.output_type == 'appbundle' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.event.inputs.build_type }}-${{ github.event.inputs.output_type }}
+          path: build/app/outputs/bundle/*/*.aab
           retention-days: 7
 WORKFLOW_EOF
     
@@ -165,8 +214,9 @@ CONFIG_EOF
     echo "     git push"
     echo ""
     echo "  3. Build your APK:"
-    echo "     krinry flutter build apk              # Debug"
-    echo "     krinry flutter build apk --release    # Release"
-    echo "     krinry flutter build apk --split      # Split by ABI"
+    echo "     krinry flutter build apk"
+    echo "     krinry flutter build apk --release"
+    echo "     krinry flutter build apk --release --split-per-abi"
+    echo "     krinry flutter build appbundle --release"
     echo ""
 }

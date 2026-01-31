@@ -9,6 +9,7 @@ A multi-purpose CLI for mobile developers. Build Flutter apps on Android phones 
 - 🔌 **Extensible**: Modular tool system for future expansions
 - ⚡ **One-command experience**: Simple, intuitive CLI
 - 🔒 **Secure**: Never stores tokens, uses GitHub CLI for auth
+- 📦 **Auto-install**: Download and install APK on your phone
 
 ## 🚀 Quick Install
 
@@ -28,6 +29,7 @@ This will:
 
 ```bash
 krinry --help       # Show all commands
+krinry --version    # Show version
 krinry update       # Update to latest version
 ```
 
@@ -39,6 +41,30 @@ krinry flutter doctor       # Check system requirements
 krinry flutter init         # Initialize cloud build
 krinry flutter build apk    # Build APK in cloud
 krinry flutter run web      # Run Flutter web server locally
+```
+
+### Build Commands (same as `flutter build`)
+
+```bash
+# APK builds
+krinry flutter build apk --debug
+krinry flutter build apk --profile  
+krinry flutter build apk --release
+
+# Split APK by architecture (smaller files)
+krinry flutter build apk --release --split-per-abi
+
+# Target specific platform
+krinry flutter build apk --release --target-platform android-arm64
+krinry flutter build apk --release --target-platform android-arm
+krinry flutter build apk --release --target-platform android-x64
+
+# App Bundle (for Play Store)
+krinry flutter build appbundle --debug
+krinry flutter build appbundle --release
+
+# Build and install on device
+krinry flutter build apk --release --install
 ```
 
 ## 📋 Requirements
@@ -58,14 +84,15 @@ krinry flutter run web      # Run Flutter web server locally
        │                                       ▼
        │                               ┌─────────────┐
        └───────────────────────────────│  APK File   │
-                  Download             └─────────────┘
+                   Download             └─────────────┘
 ```
 
 1. **You code** on your phone using any editor
-2. **Run** `krinry flutter build apk`
+2. **Run** `krinry flutter build apk --release`
 3. **CLI pushes** your code to GitHub
 4. **GitHub Actions** builds the APK in the cloud
 5. **CLI downloads** the APK to your phone
+6. **(Optional)** Use `--install` to auto-install the APK
 
 ## 🛠️ Configuration
 
@@ -110,6 +137,16 @@ Initialize your project:
 krinry flutter init
 git add .
 git commit -m "Init"
+git push
+```
+
+### "Unexpected inputs" error
+
+Update your workflow:
+```bash
+krinry flutter init
+git add .
+git commit -m "Update workflow"
 git push
 ```
 
