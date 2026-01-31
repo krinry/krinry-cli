@@ -353,34 +353,58 @@ poll_build_status() {
     local output_type="$5"
     local install_after="$6"
     
-    local poll_interval=8
+    local poll_interval=5
     local status=""
     local conclusion=""
+    local start_time=$(date +%s)
+    local current_step=""
     
     print_header "Build Progress"
+    echo ""
     
     while true; do
-        # Get run status
+        # Get run status and current step
         local run_info
-        run_info=$(gh run view "$run_id" --json status,conclusion 2>/dev/null)
+        run_info=$(gh run view "$run_id" --json status,conclusion,jobs 2>/dev/null)
         
-        status=$(echo "$run_info" | grep -o '"status":"[^"]*"' | sed 's/"status":"\([^"]*\)"/\1/')
-        conclusion=$(echo "$run_info" | grep -o '"conclusion":"[^"]*"' | sed 's/"conclusion":"\([^"]*\)"/\1/')
+        status=$(echo "$run_info" | grep -o '"status":"[^"]*"' | head -1 | sed 's/"status":"\([^"]*\)"/\1/')
+        conclusion=$(echo "$run_info" | grep -o '"conclusion":"[^"]*"' | head -1 | sed 's/"conclusion":"\([^"]*\)"/\1/')
         
-        # Display status
+        # Get current step name from jobs
+        local step_name
+        step_name=$(echo "$run_info" | grep -o '"name":"[^"]*"' | tail -1 | sed 's/"name":"\([^"]*\)"/\1/')
+        
+        # Calculate elapsed time
+        local now=$(date +%s)
+        local elapsed=$((now - start_time))
+        local mins=$((elapsed / 60))
+        local secs=$((elapsed % 60))
+        local time_str
+        if [[ $mins -gt 0 ]]; then
+            time_str="${mins}m ${secs}s"
+        else
+            time_str="${secs}s"
+        fi
+        
+        # Display status with current step
         case "$status" in
             queued)
-                echo -ne "\r${YELLOW}⏳${NC} Status: Queued...                    "
+                echo -ne "\r${YELLOW}⏳${NC} Queued... (${time_str})                              "
                 ;;
             in_progress)
-                echo -ne "\r${CYAN}🔄${NC} Status: Building...                   "
+                if [[ -n "$step_name" && "$step_name" != "$current_step" ]]; then
+                    current_step="$step_name"
+                    echo ""
+                    echo -e "${CYAN}→${NC} ${step_name}"
+                fi
+                echo -ne "\r${CYAN}🔄${NC} Building... (${time_str})                             "
                 ;;
             completed)
                 echo ""
                 break
                 ;;
             *)
-                echo -ne "\r${BLUE}⏳${NC} Status: ${status}...                  "
+                echo -ne "\r${BLUE}⏳${NC} ${status}... (${time_str})                            "
                 ;;
         esac
         
@@ -440,12 +464,43 @@ download_artifact() {
         rm -f "$output_dir"/*.apk 2>/dev/null
     fi
     
-    print_step "Downloading artifact: ${artifact_name}..."
+    print_step "Downloading artifact..."
     
-    # Download the artifact
+    # Try multiple artifact name patterns (new and old formats)
+    local artifact_patterns=("${artifact_name}" "build-${artifact_name##*-}-apk" "apk-${artifact_name##*-}")
+    local download_success=false
     local download_output
-    download_output=$(gh run download "$run_id" -n "${artifact_name}" -D "$output_dir" 2>&1)
-    if [[ $? -eq 0 ]]; then
+    
+    # First, list available artifacts
+    local available_artifacts
+    available_artifacts=$(gh run view "$run_id" --json artifacts -q '.artifacts[].name' 2>/dev/null)
+    
+    if [[ -n "$available_artifacts" ]]; then
+        # Try to find matching artifact from available ones
+        while IFS= read -r avail_artifact; do
+            if [[ -n "$avail_artifact" ]]; then
+                print_step "Found artifact: ${avail_artifact}"
+                download_output=$(gh run download "$run_id" -n "${avail_artifact}" -D "$output_dir" 2>&1)
+                if [[ $? -eq 0 ]]; then
+                    download_success=true
+                    break
+                fi
+            fi
+        done <<< "$available_artifacts"
+    fi
+    
+    # Fallback: try known patterns
+    if [[ "$download_success" == "false" ]]; then
+        for pattern in "${artifact_patterns[@]}"; do
+            download_output=$(gh run download "$run_id" -n "${pattern}" -D "$output_dir" 2>&1)
+            if [[ $? -eq 0 ]]; then
+                download_success=true
+                break
+            fi
+        done
+    fi
+    
+    if [[ "$download_success" == "true" ]]; then
         # Find the downloaded files
         local files
         if [[ "$output_type" == "appbundle" ]]; then
