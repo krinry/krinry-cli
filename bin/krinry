@@ -5,7 +5,7 @@
 #          krinry flutter doctor
 #          krinry --help
 
-set -e
+# Don't use set -e here - commands handle their own errors
 
 # Installation directory (standard location)
 KRINRY_HOME="${HOME}/.krinry"
