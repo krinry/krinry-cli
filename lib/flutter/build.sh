@@ -121,15 +121,48 @@ cmd_build() {
         exit 1
     fi
     
-    # Trigger the workflow with all parameters
+    # Trigger the workflow
+    # Try new workflow format first, fall back to simple format for old workflows
     local trigger_output
-    trigger_output=$(gh workflow run krinry-build.yml \
-        -f build_type="${build_type}" \
-        -f output_type="${output_type}" \
-        -f target_platform="${target_platform}" \
-        2>&1)
+    local trigger_success=false
     
-    if [[ $? -ne 0 ]]; then
+    # Check if using advanced options that require new workflow
+    if [[ "$output_type" != "apk" || "$target_platform" != "all" ]]; then
+        # Try with all parameters (new workflow)
+        trigger_output=$(gh workflow run krinry-build.yml \
+            -f build_type="${build_type}" \
+            -f output_type="${output_type}" \
+            -f target_platform="${target_platform}" \
+            2>&1)
+        
+        if [[ $? -eq 0 ]]; then
+            trigger_success=true
+        else
+            # Check if it's an "unexpected inputs" error
+            if [[ "$trigger_output" == *"Unexpected inputs"* ]]; then
+                print_warning "Your workflow file needs to be updated for these options"
+                echo ""
+                echo "Run: krinry flutter init"
+                echo "Then: git add . && git commit -m 'Update workflow' && git push"
+                echo ""
+                echo "Or use simple build: krinry flutter build apk --${build_type}"
+                exit 1
+            fi
+        fi
+    fi
+    
+    # Try simple format (works with old and new workflows)
+    if [[ "$trigger_success" == "false" ]]; then
+        trigger_output=$(gh workflow run krinry-build.yml -f build_type="${build_type}" 2>&1)
+        
+        if [[ $? -eq 0 ]]; then
+            trigger_success=true
+            # Adjust artifact name for simple workflow
+            artifact_name="apk-${build_type}"
+        fi
+    fi
+    
+    if [[ "$trigger_success" == "false" ]]; then
         print_error "Failed to trigger workflow"
         echo ""
         echo "$trigger_output"
