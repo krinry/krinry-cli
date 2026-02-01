@@ -1,5 +1,6 @@
 #!/bin/bash
 # krinry flutter - Install Flutter Command
+# Uses tur-repo (Termux User Repository) for pre-built Flutter
 
 cmd_install_flutter() {
     print_header "Install Flutter SDK"
@@ -54,109 +55,149 @@ cmd_install_flutter() {
 install_flutter_termux() {
     print_header "Installing Flutter for Termux"
     
-    # METHOD 1: Try Termux Void repo (recommended, pre-built for Termux)
-    print_step "Setting up Termux Void repository..."
+    # Update packages first
+    print_step "Updating Termux packages..."
+    pkg update -y 2>/dev/null || apt update -y 2>/dev/null || true
+    pkg upgrade -y 2>/dev/null || apt upgrade -y 2>/dev/null || true
     
-    # Install dependencies first
+    # Install required dependencies
     print_step "Installing dependencies..."
     pkg install -y git curl wget 2>/dev/null || true
     
-    # Check if flutter is available via pkg (Termux Void repo)
-    print_step "Checking for Flutter package..."
-    
-    # Add Termux Void repo if not added
-    local sources_list="${PREFIX}/etc/apt/sources.list.d"
-    local void_repo="${sources_list}/termux-void.list"
-    
-    if [[ ! -f "$void_repo" ]]; then
-        print_step "Adding Termux Void repository..."
-        mkdir -p "$sources_list" 2>/dev/null || true
+    # METHOD 1: Add TermuxVoid repository (has Flutter pre-built)
+    print_step "Adding TermuxVoid repository..."
+    if curl -sL https://termuxvoid.github.io/repo/install.sh | bash 2>/dev/null; then
+        print_success "TermuxVoid repo added"
         
-        # Add the void repo
-        echo "deb https://termuxvoid.github.io/repo termux main" > "$void_repo" 2>/dev/null || {
-            # Try alternate method
-            echo "deb [trusted=yes] https://termuxvoid.github.io/repo termux main" > "$void_repo"
-        }
-    fi
-    
-    # Update and try to install flutter
-    print_step "Updating package lists..."
-    pkg update -y 2>/dev/null || apt update -y 2>/dev/null || true
-    
-    print_step "Installing Flutter from Termux Void repo..."
-    if pkg install flutter -y 2>/dev/null || apt install flutter -y 2>/dev/null; then
-        print_success "Flutter installed from Termux Void repo!"
+        # Update after adding repo
+        pkg update -y 2>/dev/null || true
         
-        # Verify
-        print_step "Verifying installation..."
-        if command -v flutter &>/dev/null; then
-            echo ""
-            flutter --version
-            echo ""
-            print_success "Flutter is ready!"
-            echo ""
-            echo "Next steps:"
-            echo "  1. Run: flutter doctor"
-            echo "  2. Create app: flutter create myapp"
-            echo "  3. Build: krinry flutter build apk --release"
+        # Install Flutter
+        print_step "Installing Flutter from TermuxVoid..."
+        if pkg install flutter -y 2>/dev/null; then
+            verify_flutter_termux
             return 0
         fi
     fi
     
-    # METHOD 2: If pkg install fails, try dpkg method
-    print_warning "Package install failed, trying alternate method..."
-    install_flutter_termux_deb
-}
-
-install_flutter_termux_deb() {
-    print_step "Downloading Flutter .deb package..."
-    
-    local deb_url="https://github.com/AryaXAI/flutter-termux/releases/latest/download/flutter.deb"
-    local deb_file="${PREFIX}/tmp/flutter.deb"
-    
-    # Try to download .deb
-    if curl -fsSL "$deb_url" -o "$deb_file" 2>/dev/null || \
-       wget -q "$deb_url" -O "$deb_file" 2>/dev/null; then
-        
-        print_step "Installing Flutter .deb package..."
-        if dpkg -i "$deb_file" 2>/dev/null; then
-            rm -f "$deb_file" 2>/dev/null
-            print_success "Flutter installed from .deb!"
-            
-            # Verify
-            if command -v flutter &>/dev/null; then
-                echo ""
-                flutter --version
-                echo ""
-                print_success "Flutter is ready!"
-                return 0
-            fi
-        else
-            # Fix dependencies
-            apt --fix-broken install -y 2>/dev/null || true
-            if command -v flutter &>/dev/null; then
-                print_success "Flutter installed!"
-                return 0
-            fi
+    # METHOD 2: Try tur-repo (Termux User Repository)
+    print_step "Trying tur-repo..."
+    if pkg install tur-repo -y 2>/dev/null; then
+        pkg update -y 2>/dev/null || true
+        if pkg install flutter -y 2>/dev/null; then
+            verify_flutter_termux
+            return 0
         fi
     fi
     
-    # METHOD 3: Manual installation guide
+    # METHOD 3: Install via one-line script from community
+    print_step "Trying community install script..."
+    
+    # Download and run the install script
+    local install_script="${PREFIX}/tmp/flutter-install.sh"
+    
+    # Try multiple sources
+    local scripts=(
+        "https://raw.githubusercontent.com/nicko130/Flutter-For-Termux/main/install.sh"
+        "https://raw.githubusercontent.com/nicko3130/termux-flutter/main/install.sh"
+    )
+    
+    for script_url in "${scripts[@]}"; do
+        if curl -fsSL "$script_url" -o "$install_script" 2>/dev/null; then
+            chmod +x "$install_script"
+            if bash "$install_script" 2>/dev/null; then
+                rm -f "$install_script"
+                verify_flutter_termux
+                return 0
+            fi
+        fi
+    done
+    
+    # METHOD 4: Manual steps with clear instructions
+    print_warning "Automatic installation couldn't complete"
+    echo ""
+    print_header "Running Manual Installation Steps"
+    echo ""
+    
+    # Actually run the manual steps automatically
+    print_step "Step 1: Installing proot-distro..."
+    pkg install proot-distro -y 2>/dev/null || true
+    
+    print_step "Step 2: Installing Ubuntu in proot..."
+    if proot-distro install ubuntu 2>/dev/null; then
+        print_success "Ubuntu installed in proot"
+        
+        print_step "Step 3: Installing Flutter in Ubuntu proot..."
+        # Create install script for proot
+        cat > "${PREFIX}/tmp/proot-flutter-install.sh" << 'PROOTSCRIPT'
+#!/bin/bash
+apt update && apt upgrade -y
+apt install -y curl git unzip xz-utils zip libglu1-mesa clang cmake ninja-build pkg-config libgtk-3-dev
+cd ~
+git clone https://github.com/nicko130/Flutter-For-Termux.git 2>/dev/null || true
+if [ -d "Flutter-For-Termux" ]; then
+    cd Flutter-For-Termux
+    bash install.sh
+else
+    curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz -o flutter.tar.xz
+    tar -xf flutter.tar.xz
+    mv flutter /opt/
+    echo 'export PATH="/opt/flutter/bin:$PATH"' >> ~/.bashrc
+    export PATH="/opt/flutter/bin:$PATH"
+    flutter --version
+fi
+PROOTSCRIPT
+        
+        proot-distro login ubuntu -- bash "${PREFIX}/tmp/proot-flutter-install.sh" 2>/dev/null
+        
+        if proot-distro login ubuntu -- flutter --version 2>/dev/null; then
+            print_success "Flutter installed in Ubuntu proot!"
+            echo ""
+            echo "To use Flutter, run:"
+            echo "  proot-distro login ubuntu"
+            echo "  flutter doctor"
+            return 0
+        fi
+    fi
+    
+    # If all fails, provide clear manual instructions
     print_error "Automatic installation failed"
     echo ""
-    echo "Please try manual installation:"
+    echo "Please try these manual steps:"
     echo ""
-    echo "Option 1: Termux Void repo"
-    echo "  1. Add repo: pkg install tur-repo"
-    echo "  2. Install: pkg install flutter"
+    echo "${CYAN}Option 1: tur-repo (recommended)${NC}"
+    echo "  pkg install tur-repo"
+    echo "  pkg update"
+    echo "  pkg install flutter"
     echo ""
-    echo "Option 2: From .deb file"
-    echo "  1. Download flutter.deb from:"
-    echo "     https://github.com/AryaXAI/flutter-termux/releases"
-    echo "  2. Install: dpkg -i flutter.deb"
-    echo "  3. Fix deps: apt --fix-broken install"
+    echo "${CYAN}Option 2: proot with Ubuntu${NC}"
+    echo "  pkg install proot-distro"
+    echo "  proot-distro install ubuntu"
+    echo "  proot-distro login ubuntu"
+    echo "  # Inside Ubuntu:"
+    echo "  apt update && apt install snapd"
+    echo "  snap install flutter --classic"
     echo ""
     exit 1
+}
+
+verify_flutter_termux() {
+    print_step "Verifying installation..."
+    
+    if command -v flutter &>/dev/null; then
+        print_success "Flutter installed successfully!"
+        echo ""
+        flutter --version
+        echo ""
+        echo "Next steps:"
+        echo "  1. Run: flutter doctor"
+        echo "  2. Create app: flutter create myapp"
+        echo "  3. Build: krinry flutter build apk --release"
+        return 0
+    else
+        print_warning "Flutter command not found. Try restarting terminal."
+        return 1
+    fi
 }
 
 install_flutter_linux() {
@@ -167,7 +208,6 @@ install_flutter_linux() {
     local flutter_tar="${KRINRY_HOME}/flutter.tar.xz"
     local flutter_url="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz"
     
-    # Remove old installation
     rm -rf "${FLUTTER_HOME}" 2>/dev/null || true
     
     print_step "Downloading Flutter SDK..."
@@ -192,7 +232,6 @@ install_flutter_macos() {
     local flutter_zip="${KRINRY_HOME}/flutter.zip"
     local flutter_url="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.27.3-stable.zip"
     
-    # Remove old installation
     rm -rf "${FLUTTER_HOME}" 2>/dev/null || true
     
     print_step "Downloading Flutter SDK..."
@@ -215,7 +254,6 @@ setup_flutter_path() {
     local flutter_bin="${FLUTTER_HOME}/bin"
     local shell_rc=""
     
-    # Determine shell config file
     if [[ -n "$BASH_VERSION" ]]; then
         shell_rc="${HOME}/.bashrc"
     elif [[ -n "$ZSH_VERSION" ]]; then
@@ -224,18 +262,15 @@ setup_flutter_path() {
         shell_rc="${HOME}/.profile"
     fi
     
-    # Check if already in PATH
     if grep -q "flutter/bin" "$shell_rc" 2>/dev/null; then
         print_info "PATH already configured"
         return
     fi
     
-    # Add to PATH
     echo "" >> "$shell_rc"
     echo "# Flutter SDK (krinry)" >> "$shell_rc"
     echo "export PATH=\"${flutter_bin}:\$PATH\"" >> "$shell_rc"
     
-    # Export for current session
     export PATH="${flutter_bin}:$PATH"
     
     print_success "PATH configured in ${shell_rc}"
