@@ -1,179 +1,215 @@
-# krinry
+<p align="center">
+  <img src="https://img.shields.io/badge/krinry-CLI-blueviolet?style=for-the-badge&logo=terminal" alt="krinry CLI">
+</p>
 
-A multi-purpose CLI for mobile developers. Build Flutter apps on Android phones using Termux and cloud builds — **without a PC**.
+<h1 align="center">🚀 krinry</h1>
 
-## ✨ Features
+<p align="center">
+  <strong>The Ultimate CLI for Mobile Developers on Termux</strong>
+</p>
 
-- 📱 **Mobile-first**: Designed for Termux on Android
-- ☁️ **Cloud builds**: Build APKs using GitHub Actions (no heavy local tools needed)
-- 🔌 **Extensible**: Modular tool system for future expansions
-- ⚡ **One-command experience**: Simple, intuitive CLI
-- 🔒 **Secure**: Never stores tokens, uses GitHub CLI for auth
-- 📦 **Auto-install**: Download and install APK on your phone
+<p align="center">
+  <a href="#installation"><img src="https://img.shields.io/badge/Install-One%20Line-success?style=flat-square" alt="Install"></a>
+  <a href="#features"><img src="https://img.shields.io/badge/Features-Cloud%20Builds-blue?style=flat-square" alt="Features"></a>
+  <a href="https://github.com/krinry/krinry-cli/releases"><img src="https://img.shields.io/github/v/release/krinry/krinry-cli?style=flat-square&color=orange" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
+</p>
 
-## 🚀 Quick Install
+<p align="center">
+  <a href="#flutter-commands">Flutter</a> •
+  <a href="#installation">Install</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#contributing">Contributing</a>
+</p>
+
+---
+
+## ✨ What is krinry?
+
+**krinry** is a powerful CLI tool designed for mobile developers using **Termux** on Android. Build Flutter APKs in the cloud, install packages with one command, and develop apps right from your phone!
+
+### 🎯 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| ☁️ **Cloud Builds** | Build Flutter APKs/AABs using GitHub Actions |
+| 📦 **Package Manager** | Install Flutter, editors, and tools with one command |
+| 🔄 **Auto Updates** | Keep krinry up-to-date automatically |
+| 📱 **Termux Native** | Built specifically for Termux on Android |
+| 🎨 **Beautiful UI** | Colorful, informative terminal output |
+
+---
+
+## 📥 Installation
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
 ```
 
-This will:
-- Install required packages (git, gh, curl, jq, termux-api)
-- Clone krinry
-- Set up the CLI in your PATH
-- Guide you through GitHub authentication
-
-## 📖 Commands
-
-### Global
-
+After installation, restart your terminal or run:
 ```bash
-krinry --help       # Show all commands
-krinry --version    # Show version
-krinry update       # Update to latest version
+source ~/.bashrc
 ```
 
-### Flutter Tool
-
-```bash
-krinry flutter install      # Install Flutter SDK
-krinry flutter doctor       # Check system requirements
-krinry flutter init         # Initialize cloud build
-krinry flutter build apk    # Build APK in cloud
-krinry flutter run web      # Run Flutter web server locally
-```
-
-### Build Commands (same as `flutter build`)
-
-```bash
-# APK builds
-krinry flutter build apk --debug
-krinry flutter build apk --profile  
-krinry flutter build apk --release
-
-# Split APK by architecture (smaller files)
-krinry flutter build apk --release --split-per-abi
-
-# Target specific platform
-krinry flutter build apk --release --target-platform android-arm64
-krinry flutter build apk --release --target-platform android-arm
-krinry flutter build apk --release --target-platform android-x64
-
-# App Bundle (for Play Store)
-krinry flutter build appbundle --debug
-krinry flutter build appbundle --release
-
-# Build and install on device
-krinry flutter build apk --release --install
-```
-
-## 📋 Requirements
-
-- Android phone with [Termux](https://termux.dev/)
-- GitHub account
+### Requirements
+- [Termux](https://f-droid.org/packages/com.termux/) (from F-Droid)
 - Internet connection
-
-## 🔧 How It Works
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Termux    │────▶│   GitHub    │────▶│   Actions   │
-│ krinry cli  │     │    API      │     │   Runner    │
-└─────────────┘     └─────────────┘     └─────────────┘
-       ▲                                       │
-       │                                       ▼
-       │                               ┌─────────────┐
-       └───────────────────────────────│  APK File   │
-                   Download             └─────────────┘
-```
-
-1. **You code** on your phone using any editor
-2. **Run** `krinry flutter build apk --release`
-3. **CLI pushes** your code to GitHub
-4. **GitHub Actions** builds the APK in the cloud
-5. **CLI downloads** the APK to your phone
-6. **(Optional)** Use `--install` to auto-install the APK
-
-## 🛠️ Configuration
-
-Configuration is stored in `.krinry.yaml`:
-
-```yaml
-project:
-  name: my_app
-  type: flutter
-
-build:
-  apk:
-    artifact: app-release.apk
-    output_path: build/app/outputs/flutter-apk
-
-cloud:
-  provider: github
-  workflow: krinry-build.yml
-  poll_interval: 8
-```
-
-## 🐛 Troubleshooting
-
-### "gh: command not found"
-
-Install GitHub CLI:
-```bash
-pkg install gh
-```
-
-### "Not authenticated"
-
-Login to GitHub:
-```bash
-gh auth login
-```
-
-### "Workflow not found"
-
-Initialize your project:
-```bash
-krinry flutter init
-git add .
-git commit -m "Init"
-git push
-```
-
-### "Unexpected inputs" error
-
-Update your workflow:
-```bash
-krinry flutter init
-git add .
-git commit -m "Update workflow"
-git push
-```
-
-### Build failed
-
-Check the logs:
-```bash
-gh run view --log-failed
-```
-
-## 🔌 Extensibility
-
-krinry is designed to be extensible. Future tools can be added under the `tools/` directory:
-
-```
-krinry xyz ...     # Custom tool
-krinry abc ...     # Another tool
-```
-
-## 🤝 Contributing
-
-Contributions welcome! Please read the PRD in `prd.md` before contributing.
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE)
+- GitHub account (for cloud builds)
 
 ---
 
-Made with ❤️ for mobile developers
+## 🚀 Quick Start
+
+### Install Flutter
+```bash
+krinry install flutter
+```
+
+### Build APK in Cloud
+```bash
+# Initialize your project
+cd your-flutter-project
+krinry flutter init
+
+# Build release APK
+krinry flutter build apk --release
+```
+
+---
+
+## 📖 Usage
+
+### Global Commands
+
+| Command | Description |
+|---------|-------------|
+| `krinry --help` | Show help |
+| `krinry --version` | Show version |
+| `krinry update` | Update krinry to latest |
+
+### Install Commands
+
+```bash
+# Install Flutter SDK
+krinry install flutter
+
+# Install editors
+krinry install neovim
+krinry install micro
+krinry install vim
+
+# Install any Termux package
+krinry install <package-name>
+```
+
+### Flutter Commands
+
+```bash
+# Initialize cloud builds in your project
+krinry flutter init
+
+# Check system setup
+krinry flutter doctor
+
+# Build APK (cloud)
+krinry flutter build apk --release
+krinry flutter build apk --debug
+krinry flutter build apk --split-per-abi
+
+# Build App Bundle
+krinry flutter build appbundle --release
+
+# Run web server locally
+krinry flutter run web
+```
+
+### Build Options
+
+| Flag | Description |
+|------|-------------|
+| `--release` | Release build (optimized) |
+| `--debug` | Debug build (default) |
+| `--split-per-abi` | Split APK by architecture |
+| `--target-platform` | Build for specific ABI |
+| `--install` | Install APK after download |
+
+---
+
+## 🔧 How Cloud Builds Work
+
+1. **Initialize** - `krinry flutter init` creates a GitHub Actions workflow
+2. **Commit** - Push your code to GitHub
+3. **Build** - `krinry flutter build apk` triggers the workflow
+4. **Download** - APK is automatically downloaded when ready
+
+```
+Your Phone (Termux)          GitHub Actions
+      │                            │
+      ├── krinry flutter init ────►│ Creates workflow
+      │                            │
+      ├── git push ───────────────►│ Code uploaded
+      │                            │
+      ├── krinry flutter build ───►│ Triggers build
+      │                            │
+      │◄── APK downloaded ─────────┤ Build complete
+      │                            │
+```
+
+---
+
+## 📁 Project Structure
+
+```
+~/.krinry/
+├── bin/
+│   └── krinry           # Main CLI entry point
+├── lib/
+│   ├── core.sh          # Core utilities
+│   ├── update.sh        # Auto-update
+│   ├── install.sh       # Package installer
+│   └── flutter/
+│       ├── init.sh      # Flutter init
+│       ├── build.sh     # Cloud build
+│       ├── install.sh   # Flutter SDK install
+│       └── ...
+└── workflows/
+    └── krinry-flutter-build.yml
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing`)
+5. Open a Pull Request
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Credits
+
+- **[TermuxVoid](https://github.com/termuxvoid)** - Pre-built packages for Termux
+- **[Flutter](https://flutter.dev)** - UI toolkit
+- **[GitHub Actions](https://github.com/features/actions)** - Cloud CI/CD
+
+---
+
+<p align="center">
+  <strong>Made with ❤️ by <a href="https://github.com/krinry">krinry</a></strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/krinry/krinry-cli/stargazers">⭐ Star this repo</a> •
+  <a href="https://github.com/krinry/krinry-cli/issues">🐛 Report Bug</a> •
+  <a href="https://github.com/krinry/krinry-cli/issues">💡 Request Feature</a>
+</p>

@@ -53,31 +53,34 @@ cmd_install_flutter() {
 }
 
 install_flutter_termux() {
-    print_header "Installing Flutter for Termux"
+    print_header "Installing Flutter SDK"
+    echo -e "${DIM}krinry Flutter Installer${NC}"
+    echo ""
     
     # Update packages first
     print_step "Updating Termux packages..."
-    pkg update -y 2>/dev/null || apt update -y 2>/dev/null || true
-    pkg upgrade -y 2>/dev/null || apt upgrade -y 2>/dev/null || true
+    pkg update -y >/dev/null 2>&1 || apt update -y >/dev/null 2>&1 || true
+    pkg upgrade -y >/dev/null 2>&1 || apt upgrade -y >/dev/null 2>&1 || true
+    print_success "Packages updated"
     
     # Install required dependencies
     print_step "Installing dependencies..."
-    pkg install -y git curl wget 2>/dev/null || true
+    pkg install -y git curl wget >/dev/null 2>&1 || true
+    print_success "Dependencies ready"
     
-    # METHOD 1: Add TermuxVoid repository (has Flutter pre-built)
-    print_step "Adding TermuxVoid repository..."
-    if curl -sL https://termuxvoid.github.io/repo/install.sh | bash 2>/dev/null; then
-        print_success "TermuxVoid repo added"
-        
-        # Update after adding repo
-        pkg update -y 2>/dev/null || true
-        
-        # Install Flutter
-        print_step "Installing Flutter from TermuxVoid..."
-        if pkg install flutter -y 2>/dev/null; then
-            verify_flutter_termux
-            return 0
-        fi
+    # METHOD 1: Add TermuxVoid repository (silently)
+    print_step "Configuring package sources..."
+    curl -sL https://termuxvoid.github.io/repo/install.sh 2>/dev/null | bash >/dev/null 2>&1
+    print_success "Sources configured"
+    
+    # Update after adding repo
+    pkg update -y >/dev/null 2>&1 || true
+    
+    # Install Flutter
+    print_step "Downloading Flutter SDK (this takes a while)..."
+    if pkg install flutter -y 2>/dev/null; then
+        verify_flutter_termux
+        return 0
     fi
     
     # METHOD 2: Try tur-repo (Termux User Repository)
@@ -185,6 +188,7 @@ verify_flutter_termux() {
     print_step "Verifying installation..."
     
     if command -v flutter &>/dev/null; then
+        echo ""
         print_success "Flutter installed successfully!"
         echo ""
         flutter --version
@@ -193,6 +197,8 @@ verify_flutter_termux() {
         echo "  1. Run: flutter doctor"
         echo "  2. Create app: flutter create myapp"
         echo "  3. Build: krinry flutter build apk --release"
+        echo ""
+        echo -e "${DIM}Powered by krinry • Flutter package from TermuxVoid${NC}"
         return 0
     else
         print_warning "Flutter command not found. Try restarting terminal."

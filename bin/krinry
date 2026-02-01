@@ -51,27 +51,33 @@ show_help() {
     echo ""
     echo -e "${BOLD}TOOLS:${NC}"
     echo "  flutter     Flutter development & cloud builds"
+    echo "  install     Install packages (flutter, neovim, etc.)"
     echo ""
     echo -e "${BOLD}GLOBAL COMMANDS:${NC}"
     echo "  --help, -h      Show this help message"
     echo "  --version, -v   Show version"
     echo "  update          Update krinry to latest version"
     echo ""
+    echo -e "${BOLD}INSTALL COMMANDS:${NC}"
+    echo "  krinry install flutter      Install Flutter SDK"
+    echo "  krinry install neovim       Install Neovim editor"
+    echo "  krinry install micro        Install Micro editor"
+    echo "  krinry install <pkg>        Install any Termux package"
+    echo ""
     echo -e "${BOLD}FLUTTER COMMANDS:${NC}"
-    echo "  krinry flutter install     Install Flutter SDK"
     echo "  krinry flutter doctor       Check system requirements"
     echo "  krinry flutter init         Initialize cloud build"
     echo "  krinry flutter build apk    Build APK in cloud"
     echo "  krinry flutter run web      Run Flutter web server"
     echo ""
     echo -e "${BOLD}EXAMPLES:${NC}"
-    echo "  krinry flutter install"
+    echo "  krinry install flutter"
     echo "  krinry flutter build apk --release"
     echo "  krinry flutter run web"
     echo "  krinry update"
     echo ""
     echo -e "${BOLD}DOCS:${NC}"
-    echo "  https://github.com/krinry/krinry"
+    echo "  https://github.com/krinry/krinry-cli"
     echo ""
 }
 
@@ -101,6 +107,10 @@ main() {
         update)
             source "${LIB_DIR}/update.sh"
             cmd_update
+            ;;
+        install)
+            shift
+            run_install_tool "$@"
             ;;
         flutter)
             shift
@@ -212,16 +222,70 @@ show_flutter_help() {
     echo "  --debug            Debug build (default)"
     echo "  --profile          Profile build"
     echo "  --release          Release build"
-    echo "  --split            Split APK by ABI"
-    echo "  --arm64/--arm/--x64  Target specific platform"
+    echo "  --split-per-abi    Split APK by ABI"
+    echo "  --target-platform  Target specific platform"
     echo "  --install          Install on device after download"
     echo ""
     echo -e "${BOLD}EXAMPLES:${NC}"
     echo "  krinry flutter build apk              # Debug APK"
     echo "  krinry flutter build apk --release    # Release APK"
-    echo "  krinry flutter build apk --split      # Split APKs"
+    echo "  krinry flutter build apk --split-per-abi  # Split APKs"
     echo "  krinry flutter build appbundle        # App Bundle"
     echo "  krinry flutter build apk --install    # Build & install"
+    echo ""
+}
+
+# ============ Install Tool ============
+
+run_install_tool() {
+    # No package - show help
+    if [[ $# -eq 0 ]]; then
+        show_install_help
+        exit 1
+    fi
+    
+    local package="$1"
+    shift
+    
+    case "$package" in
+        flutter)
+            source "${LIB_DIR}/flutter/install.sh"
+            cmd_install_flutter
+            ;;
+        --help|-h)
+            show_install_help
+            ;;
+        *)
+            # Generic package install
+            source "${LIB_DIR}/install.sh"
+            cmd_install_package "$package"
+            ;;
+    esac
+}
+
+show_install_help() {
+    echo ""
+    echo -e "${BOLD}${CYAN}krinry install${NC}"
+    echo "Install packages with krinry"
+    echo ""
+    echo -e "${BOLD}USAGE:${NC}"
+    echo "  krinry install <package>"
+    echo ""
+    echo -e "${BOLD}SPECIAL PACKAGES:${NC}"
+    echo "  flutter      Flutter SDK for app development"
+    echo ""
+    echo -e "${BOLD}EDITOR PACKAGES:${NC}"
+    echo "  neovim       Powerful text editor"
+    echo "  micro        Modern terminal editor (recommended)"
+    echo "  nano         Simple text editor"
+    echo "  vim          Classic text editor"
+    echo ""
+    echo -e "${BOLD}EXAMPLES:${NC}"
+    echo "  krinry install flutter"
+    echo "  krinry install neovim"
+    echo "  krinry install micro"
+    echo ""
+    echo -e "${DIM}Powered by krinry • Packages from TermuxVoid${NC}"
     echo ""
 }
 
