@@ -2,6 +2,20 @@
 
 All notable changes to krinry are documented here.
 
+## [3.0.2] - 2026-02-23
+
+### Added
+- **Plugin-based Installer Architecture**: `lib/installers/` directory introduced. Any `.sh` file added here automatically becomes a `krinry install <name>` command.
+- `krinry install qwen`: Installs Qwen Code CLI via npm automatically.
+- Generic fallback installer: `krinry install <pkg>` will attempt to install via Termux `pkg` if a dedicated script doesn't exist.
+- 12 standard plugins added to the `krinry install oh-my-zsh` configuration.
+
+### Changed
+- Removed all dependencies on the TermuxVoid repository.
+- Flutter installation now uses a dedicated `packages/flutter.deb` file hosted directly in the krinry-cli repository for enhanced reliability and custom branding.
+- Global installation script (`install.sh`) now only installs absolute minimum dependencies (`git`, `curl`). Other dependencies like `gh`, `jq`, `npm` are installed lazily only when requested by a specific command.
+- Switched all main repository references from the `main` branch to the `dev` branch.
+
 ## [2.7.1] - 2025-02-01
 
 ### Added

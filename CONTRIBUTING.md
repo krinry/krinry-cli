@@ -43,6 +43,15 @@ Thank you for your interest in contributing to krinry! 🎉
 - 🧪 Testing on different devices
 - 🎨 UI/UX improvements
 
+### Creating an Installer Plugin
+
+krinry uses an auto-discovery system for installers. To add a new tool (e.g. `krinry install mytool`):
+
+1. Create a new bash script at `lib/installers/mytool.sh`.
+2. Define a `cmd_install()` function inside it.
+3. Source and use shared helpers from `_base.sh` automatically.
+4. Commit and push: it will automatically be available to all users!
+
 ## Development Setup
 
 ```bash

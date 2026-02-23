@@ -48,7 +48,7 @@ cmd_install() {
     local ZSHRC="${HOME}/.zshrc"
     cp "$ZSHRC" "${ZSHRC}.backup" 2>/dev/null || true
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' "$ZSHRC" 2>/dev/null || true
-    sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions)/' "$ZSHRC" 2>/dev/null || true
+    sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting zsh-completions sudo history copydir copyfile web-search python npm node extract)/' "$ZSHRC" 2>/dev/null || true
     chsh -s zsh 2>/dev/null || true
     print_success "Zsh configured & set as default"
     
@@ -59,6 +59,7 @@ cmd_install() {
     echo "  ✓ zsh-autosuggestions"
     echo "  ✓ zsh-syntax-highlighting"
     echo "  ✓ zsh-completions"
+    echo "  ✓ 10+ standard plugins (sudo, history, npm, python, etc.)"
     echo ""
     echo -e "${BOLD}To activate:${NC}"
     echo "  Restart Termux or type: zsh"

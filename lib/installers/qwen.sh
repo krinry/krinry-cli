@@ -22,22 +22,22 @@ cmd_install() {
         print_success "npm already installed"
     fi
 
-    # Step 2: Install redgit (required for Qwen search functionality)
-    print_step "[2/3] Installing redgit..."
-    if ! is_command_available redgit; then
-        if pkg install redgit -y 2>/dev/null; then
-            print_success "redgit installed"
+    # Step 2: Install ripgrep (required for Qwen search functionality)
+    print_step "[2/3] Installing ripgrep..."
+    if ! is_command_available rg; then
+        if pkg install ripgrep -y 2>/dev/null; then
+            print_success "ripgrep installed"
         else
-            print_warning "redgit not found in default repo, trying update..."
+            print_warning "ripgrep not found in default repo, trying update..."
             pkg update -y >/dev/null 2>&1 || true
-            if pkg install redgit -y 2>/dev/null; then
-                print_success "redgit installed"
+            if pkg install ripgrep -y 2>/dev/null; then
+                print_success "ripgrep installed"
             else
-                print_warning "redgit could not be installed, some Qwen features may not work"
+                print_warning "ripgrep could not be installed, some Qwen features may not work"
             fi
         fi
     else
-        print_success "redgit already installed"
+        print_success "ripgrep already installed"
     fi
 
     # Step 3: Install Qwen Code CLI via npm

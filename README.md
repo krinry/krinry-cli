@@ -43,7 +43,7 @@
 ## 📥 Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/dev/install.sh | bash
 ```
 
 After installation, restart your terminal or run:
@@ -93,12 +93,18 @@ krinry flutter build apk --release
 # Install Flutter SDK
 krinry install flutter
 
+# Install AI Tools
+krinry install qwen
+
+# Install Shell enhancements
+krinry install oh-my-zsh
+krinry install shell-tools
+
 # Install editors
 krinry install neovim
 krinry install micro
-krinry install vim
 
-# Install any Termux package
+# Install any Termux package as fallback
 krinry install <package-name>
 ```
 
@@ -166,12 +172,14 @@ Your Phone (Termux)          GitHub Actions
 ├── lib/
 │   ├── core.sh          # Core utilities
 │   ├── update.sh        # Auto-update
-│   ├── install.sh       # Package installer
-│   └── flutter/
-│       ├── init.sh      # Flutter init
-│       ├── build.sh     # Cloud build
-│       ├── install.sh   # Flutter SDK install
-│       └── ...
+│   ├── install.sh       # Auto-discovery plugin dispatcher
+│   ├── installers/      # 📦 PLUGINS: Drop a .sh file here to add a tool!
+│   │   ├── qwen.sh
+│   │   ├── flutter.sh
+│   │   └── ...
+│   └── flutter/         # Dedicated flutter core logic
+│       ├── init.sh
+│       └── build.sh
 └── workflows/
     └── krinry-flutter-build.yml
 ```
@@ -198,7 +206,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Credits
 
-- **[TermuxVoid](https://github.com/termuxvoid)** - Pre-built packages for Termux
 - **[Flutter](https://flutter.dev)** - UI toolkit
 - **[GitHub Actions](https://github.com/features/actions)** - Cloud CI/CD
 

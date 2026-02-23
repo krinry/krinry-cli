@@ -20,7 +20,7 @@ A mobile-first CLI that lets users build Flutter apps on Android phones using Te
 ## 5. Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/dev/install.sh | bash
 ```
 
 ## 6. Command Structure
@@ -66,7 +66,11 @@ krinry flutter build apk --release --install
 ## 7. Architecture
 
 ```
-User (Termux) → krinry CLI → GitHub API → Actions Runner → APK → Download
+User (Termux) → krinry CLI → Plugin Dispatcher (lib/installers/*.sh)
+                                 │
+                                 ├──> Flutter Tool → GitHub Action → APK
+                                 ├──> Qwen Install
+                                 └──> Shell Tools Install
 ```
 
 ## 8. Files Generated
@@ -119,7 +123,11 @@ A user can:
 - Run web locally
 - Template workflows
 
-### v3 (Future)
-- Plugin system
+### v3 (Current)
+- ✅ Auto-discovery Plugin system (`lib/installers/`)
+- ✅ 100% krinry branding (No TermuxVoid dependency)
+- ✅ AI Tools Integration (Qwen)
+
+### v4 (Future)
 - Multiple cloud backends
 - Custom workflows

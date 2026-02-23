@@ -8,9 +8,7 @@ cmd_install() {
     echo ""
     
     require_termux
-    
     local tools=("fish" "fzf" "zsh")
-    local installed=0
     
     for tool in "${tools[@]}"; do
         print_step "Installing ${tool}..."
@@ -27,8 +25,15 @@ cmd_install() {
     if pkg install python -y >/dev/null 2>&1; then
         pip install thefuck >/dev/null 2>&1 && print_success "thefuck installed" || print_warning "thefuck failed"
     fi
-    
-    echo ""
+    # Execute Oh-My-Zsh installer
+    print_step "Installing Oh-My-Zsh with 12 plugins..."
+    if [[ -f "${LIB_DIR}/installers/oh-my-zsh.sh" ]]; then
+        source "${LIB_DIR}/installers/oh-my-zsh.sh"
+        cmd_install
+    else
+        print_warning "oh-my-zsh installer not found"
+    fi
+
     print_success "Shell tools installed! (${installed}/${#tools[@]})"
     echo ""
     echo -e "${BOLD}Recommended: Switch to Fish shell${NC}"
