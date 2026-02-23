@@ -68,9 +68,9 @@ cmd_update() {
             rm -rf "$install_dir"
             mv "krinry-cli-main" "$install_dir"
             
-            # Make scripts executable
+            # Make all scripts executable (including new installers)
             chmod +x "$install_dir/bin/krinry" 2>/dev/null
-            find "$install_dir/lib" -name "*.sh" -exec chmod +x {} \; 2>/dev/null
+            find "$install_dir/lib" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
             
             # Cleanup
             cd ~

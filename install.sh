@@ -1,6 +1,6 @@
 #!/bin/bash
 # krinry Installer
-# One-line installation: curl -fsSL https://raw.githubusercontent.com/krinry/krinry/main/install.sh | bash
+# One-line installation: curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
 
 set -e
 
@@ -11,13 +11,14 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
 print_success() { echo -e "${GREEN}✓${NC} $1"; }
-print_error() { echo -e "${RED}✗${NC} $1"; }
+print_error()   { echo -e "${RED}✗${NC} $1"; }
 print_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
-print_info() { echo -e "${BLUE}ℹ${NC} $1"; }
-print_step() { echo -e "${CYAN}→${NC} $1"; }
+print_info()    { echo -e "${BLUE}ℹ${NC} $1"; }
+print_step()    { echo -e "${CYAN}→${NC} $1"; }
 
 # Banner
 echo ""
@@ -39,7 +40,7 @@ is_termux() {
 
 # Check if command exists
 check_cmd() {
-    command -v "$1" &> /dev/null
+    command -v "$1" &>/dev/null
 }
 
 # Install directory
@@ -55,8 +56,8 @@ else
     BIN_DIR="${HOME}/.local/bin"
 fi
 
-# Install dependencies
-print_step "Checking dependencies..."
+# ── Minimal global deps: only git and curl ──────────────────────────────────
+print_step "Checking core dependencies..."
 
 install_pkg() {
     local pkg="$1"
@@ -69,77 +70,36 @@ install_pkg() {
     fi
 }
 
-# Git
+# git (needed to clone/update krinry itself)
 if ! check_cmd git; then
     print_step "Installing git..."
     install_pkg git
 fi
 if check_cmd git; then
-    print_success "git installed"
+    print_success "git ready"
 else
     print_error "Failed to install git"
     exit 1
 fi
 
-# curl
+# curl (needed for downloads)
 if ! check_cmd curl; then
     print_step "Installing curl..."
     install_pkg curl
 fi
 if check_cmd curl; then
-    print_success "curl installed"
+    print_success "curl ready"
 else
     print_error "Failed to install curl"
     exit 1
 fi
 
-# GitHub CLI
-if ! check_cmd gh; then
-    print_step "Installing GitHub CLI..."
-    if is_termux; then
-        pkg install -y gh 2>/dev/null || true
-    elif check_cmd apt-get; then
-        # Ubuntu/Debian
-        (type -p wget >/dev/null || sudo apt install wget -y) \
-        && sudo mkdir -p -m 755 /etc/apt/keyrings \
-        && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-        && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-        && sudo apt update \
-        && sudo apt install gh -y 2>/dev/null || true
-    elif check_cmd brew; then
-        brew install gh 2>/dev/null || true
-    fi
-fi
-if check_cmd gh; then
-    print_success "GitHub CLI installed"
-else
-    print_warning "GitHub CLI not installed. Install manually: https://cli.github.com"
-fi
-
-# jq (optional)
-if ! check_cmd jq; then
-    print_step "Installing jq..."
-    install_pkg jq
-fi
-if check_cmd jq; then
-    print_success "jq installed"
-else
-    print_warning "jq not installed (optional)"
-fi
-
-# termux-api (for Termux - enables auto browser open)
-if is_termux; then
-    if ! check_cmd termux-open-url; then
-        print_step "Installing termux-api (for auto browser open)..."
-        pkg install -y termux-api 2>/dev/null || true
-    fi
-    if check_cmd termux-open-url; then
-        print_success "termux-api installed"
-    else
-        print_warning "termux-api not installed (optional, for 'run web' auto-open)"
-    fi
-fi
+# NOTE: gh, jq, termux-api are NOT installed here.
+# They are installed on-demand by the tools that need them:
+#   gh         → installed by: krinry flutter init / build
+#   jq         → installed by: krinry flutter build
+#   termux-api → installed by: krinry flutter run web
+# ────────────────────────────────────────────────────────────────────────────
 
 # Clone or update repository
 print_step "Installing krinry..."
@@ -156,8 +116,7 @@ fi
 
 # Make scripts executable
 chmod +x "$INSTALL_DIR/bin/krinry" 2>/dev/null || true
-chmod +x "$INSTALL_DIR/lib/"*.sh 2>/dev/null || true
-chmod +x "$INSTALL_DIR/lib/flutter/"*.sh 2>/dev/null || true
+find "$INSTALL_DIR/lib" -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
 # Create bin directory if needed
 mkdir -p "$BIN_DIR"
@@ -170,7 +129,7 @@ print_success "Symlink created at $BIN_DIR/krinry"
 # Add to PATH if needed
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     print_step "Adding to PATH..."
-    
+
     SHELL_RC=""
     if [[ -n "$BASH_VERSION" ]]; then
         SHELL_RC="${HOME}/.bashrc"
@@ -179,28 +138,15 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     else
         SHELL_RC="${HOME}/.profile"
     fi
-    
+
     if ! grep -q "$BIN_DIR" "$SHELL_RC" 2>/dev/null; then
-        echo "" >> "$SHELL_RC"
-        echo "# krinry" >> "$SHELL_RC"
-        echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+        echo "" >>"$SHELL_RC"
+        echo "# krinry" >>"$SHELL_RC"
+        echo "export PATH=\"$BIN_DIR:\$PATH\"" >>"$SHELL_RC"
         print_success "Added to $SHELL_RC"
     fi
-    
-    export PATH="$BIN_DIR:$PATH"
-fi
 
-# GitHub auth check
-echo ""
-print_step "Checking GitHub authentication..."
-if gh auth status &>/dev/null; then
-    print_success "GitHub authenticated"
-else
-    print_warning "Not logged into GitHub"
-    echo ""
-    echo "To use cloud builds, please authenticate:"
-    echo "  gh auth login"
-    echo ""
+    export PATH="$BIN_DIR:$PATH"
 fi
 
 # Done!
@@ -209,32 +155,10 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}✓${NC} ${BOLD}krinry installed successfully!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-
-# Ask about shell-tools for Termux
-if is_termux; then
-    echo -e "${BOLD}${CYAN}Recommended: Shell Enhancement Tools${NC}"
-    echo "  • Fish shell with auto-suggestions"
-    echo "  • TheFuck - fixes wrong commands"
-    echo "  • Fzf - fuzzy finder"
-    echo ""
-    read -p "Install shell-tools? (y/n): " -n 1 -r
-    echo ""
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo ""
-        source "$INSTALL_DIR/lib/core.sh"
-        source "$INSTALL_DIR/lib/install.sh"
-        install_shell_tools
-    else
-        echo ""
-        print_info "Skipped. Install later with: krinry install shell-tools"
-    fi
-    echo ""
-fi
-
 echo "Quick start:"
 echo "  krinry --help              Show all commands"
 echo "  krinry install flutter     Install Flutter SDK"
+echo "  krinry install qwen        Install Qwen AI Code CLI"
 echo "  krinry install shell-tools Install auto-suggestions"
 echo ""
 echo "In a Flutter project:"
@@ -244,6 +168,8 @@ echo "  krinry flutter run web         Run web server locally"
 echo ""
 echo "Update:"
 echo "  krinry update"
+echo ""
+echo -e "${DIM}Powered by krinry • https://github.com/krinry/krinry-cli${NC}"
 echo ""
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     print_warning "Please restart your terminal or run:"
