@@ -1,6 +1,6 @@
 #!/bin/bash
 # krinry Installer
-# One-line installation: curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/main/install.sh | bash
+# One-line installation: curl -fsSL https://raw.githubusercontent.com/krinry/krinry-cli/dev/install.sh | bash
 
 set -e
 
@@ -107,8 +107,8 @@ print_step "Installing krinry..."
 if [[ -d "$INSTALL_DIR" ]]; then
     print_info "Updating existing installation..."
     cd "$INSTALL_DIR"
-    git fetch origin main 2>/dev/null || true
-    git reset --hard origin/main 2>/dev/null || git pull 2>/dev/null || true
+    git fetch origin dev 2>/dev/null || true
+    git reset --hard origin/dev 2>/dev/null || git pull 2>/dev/null || true
 else
     print_info "Cloning repository..."
     git clone "$REPO_URL" "$INSTALL_DIR"

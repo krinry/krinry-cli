@@ -3,8 +3,8 @@
 # Uses krinry's flutter.deb (krinry branding, not TermuxVoid)
 
 # GitHub raw URL for flutter.deb in krinry-cli repo
-FLUTTER_DEB_URL="https://raw.githubusercontent.com/krinry/krinry-cli/main/packages/flutter.deb"
-FLUTTER_DEB_FALLBACK="https://github.com/krinry/krinry-cli/raw/main/packages/flutter.deb"
+FLUTTER_DEB_URL="https://raw.githubusercontent.com/krinry/krinry-cli/dev/packages/flutter.deb"
+FLUTTER_DEB_FALLBACK="https://github.com/krinry/krinry-cli/raw/dev/packages/flutter.deb"
 
 cmd_install_flutter() {
     print_header "Install Flutter SDK"

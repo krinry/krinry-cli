@@ -75,7 +75,7 @@ cmd_init() {
     else
         # Fallback: download latest from GitHub
         print_step "Downloading latest workflow..."
-        curl -fsSL "https://raw.githubusercontent.com/krinry/krinry-cli/main/workflows/krinry-flutter-build.yml" -o "$workflow_file" 2>/dev/null
+        curl -fsSL "https://raw.githubusercontent.com/krinry/krinry-cli/dev/workflows/krinry-flutter-build.yml" -o "$workflow_file" 2>/dev/null
         
         if [[ ! -f "$workflow_file" || ! -s "$workflow_file" ]]; then
             print_error "Failed to download workflow template"

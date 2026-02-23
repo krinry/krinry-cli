@@ -12,7 +12,7 @@ cmd_update() {
     # Get latest version from GitHub
     print_step "Fetching latest version..."
     local latest_version
-    latest_version=$(curl -fsSL "https://raw.githubusercontent.com/krinry/krinry-cli/main/lib/core.sh" 2>/dev/null | grep "^VERSION=" | cut -d'"' -f2)
+    latest_version=$(curl -fsSL "https://raw.githubusercontent.com/krinry/krinry-cli/dev/lib/core.sh" 2>/dev/null | grep "^VERSION=" | cut -d'"' -f2)
     
     if [[ -z "$latest_version" ]]; then
         print_error "Could not fetch latest version"
@@ -56,7 +56,7 @@ cmd_update() {
     mkdir -p "$temp_dir"
     
     # Download latest release
-    if curl -fsSL "https://github.com/krinry/krinry-cli/archive/refs/heads/main.tar.gz" -o "$temp_dir/krinry.tar.gz" 2>/dev/null; then
+    if curl -fsSL "https://github.com/krinry/krinry-cli/archive/refs/heads/dev.tar.gz" -o "$temp_dir/krinry.tar.gz" 2>/dev/null; then
         print_success "Downloaded"
         
         print_step "Installing update..."
@@ -64,9 +64,9 @@ cmd_update() {
         tar -xzf krinry.tar.gz 2>/dev/null
         
         # Copy new files
-        if [[ -d "krinry-cli-main" ]]; then
+        if [[ -d "krinry-cli-dev" ]]; then
             rm -rf "$install_dir"
-            mv "krinry-cli-main" "$install_dir"
+            mv "krinry-cli-dev" "$install_dir"
             
             # Make all scripts executable (including new installers)
             chmod +x "$install_dir/bin/krinry" 2>/dev/null
