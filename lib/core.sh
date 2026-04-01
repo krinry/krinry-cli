@@ -3,7 +3,7 @@
 # Shared utilities for all tools
 
 # Version
-VERSION="3.1.1"
+VERSION="4.0.0"
 
 # Colors for output
 RED='\033[0;31m'
@@ -81,6 +81,31 @@ get_flutter_version() {
     fi
 }
 
+# ============ Gradle Project Functions ============
+
+is_gradle_project() {
+    [[ -f "build.gradle" ]] || [[ -f "build.gradle.kts" ]] || [[ -f "settings.gradle" ]] || [[ -f "settings.gradle.kts" ]]
+}
+
+has_gradle_workflow_file() {
+    [[ -f ".github/workflows/krinry-gradle-build.yml" ]]
+}
+
+is_android_project() {
+    # Check for Android project markers
+    if [[ -f "app/build.gradle" ]] || [[ -f "app/build.gradle.kts" ]]; then
+        return 0
+    fi
+    # Single-module android project
+    if is_gradle_project && grep -q "android" build.gradle 2>/dev/null; then
+        return 0
+    fi
+    if is_gradle_project && grep -q "android" build.gradle.kts 2>/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
 # ============ Config Functions ============
 
 read_config() {
@@ -135,6 +160,10 @@ is_flutter_project() {
 
 has_workflow_file() {
     [[ -f ".github/workflows/krinry-build.yml" ]]
+}
+
+has_flutter_create_workflow() {
+    [[ -f ".github/workflows/krinry-flutter-create.yml" ]]
 }
 
 # ============ Progress Functions ============

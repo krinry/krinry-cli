@@ -1,0 +1,88 @@
+name: krinry Gradle Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      gradle_task:
+        description: 'Gradle task to run'
+        required: true
+        default: 'assembleDebug'
+        type: string
+      
+      java_version:
+        description: 'Java Version'
+        required: true
+        default: '17'
+        type: choice
+        options:
+          - '11'
+          - '17'
+          - '21'
+
+      gradle_version:
+        description: 'Gradle Version Override (leave empty to use wrapper)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java_version }}
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ inputs.gradle_version || 'wrapper' }}
+
+      - name: Make wrapper executable
+        run: chmod +x ./gradlew
+        if: ${{ inputs.gradle_version == '' }}
+
+      - name: Run Gradle Task
+        run: |
+          echo "🔨 Running: ./gradlew ${{ inputs.gradle_task }}"
+          ./gradlew ${{ inputs.gradle_task }}
+
+      - name: Upload APK outputs
+        if: ${{ contains(inputs.gradle_task, 'assemble') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.gradle_task }}-apk
+          path: app/build/outputs/apk/**/*.apk
+          retention-days: 7
+
+      - name: Upload App Bundle outputs
+        if: ${{ contains(inputs.gradle_task, 'bundle') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.gradle_task }}-aab
+          path: app/build/outputs/bundle/**/*.aab
+          retention-days: 7
+
+      - name: Upload AAR outputs
+        if: ${{ contains(inputs.gradle_task, 'assemble') }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.gradle_task }}-aar
+          path: '*/build/outputs/aar/*.aar'
+          retention-days: 7
+
+      - name: Upload Test Reports
+        if: ${{ contains(inputs.gradle_task, 'test') }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '*/build/reports/tests/'
+          retention-days: 7

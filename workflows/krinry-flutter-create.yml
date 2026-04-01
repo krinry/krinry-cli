@@ -1,0 +1,80 @@
+name: krinry Flutter Create
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project Name'
+        required: true
+        type: string
+      org:
+        description: 'Organization (e.g., com.example)'
+        required: true
+        default: 'com.example'
+        type: string
+      template:
+        description: 'Template'
+        required: true
+        default: 'app'
+        type: choice
+        options:
+          - app
+          - package
+          - plugin
+          - skeleton
+      platforms:
+        description: 'Platforms (comma-separated: android,ios,web,linux,macos,windows)'
+        required: true
+        default: 'android,ios,web'
+        type: string
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create Project
+        run: |
+          echo "Creating Flutter project: ${{ inputs.project_name }}"
+          
+          # We need to run flutter create in a temp dir then move it to root
+          mkdir -p temp_create_dir
+          cd temp_create_dir
+          
+          flutter create \
+            --org "${{ inputs.org }}" \
+            --template "${{ inputs.template }}" \
+            --platforms "${{ inputs.platforms }}" \
+            "${{ inputs.project_name }}"
+            
+          # Move contents back to root and cleanup
+          cd "${{ inputs.project_name }}"
+          mv * ../../
+          mv .* ../../ 2>/dev/null || true
+          cd ../../
+          rm -rf temp_create_dir
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          
+          # Only commit if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: initialize flutter project via krinry create"
+            git push
+            echo "✅ Project scaffolded and pushed to repository."
+          else
+            echo "No changes to commit."
+          fi

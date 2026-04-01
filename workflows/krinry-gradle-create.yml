@@ -1,0 +1,151 @@
+name: krinry Gradle Create
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_type:
+        description: 'Project Type'
+        required: true
+        type: choice
+        options:
+          - android
+          - java-application
+          - java-library
+          - kotlin-application
+          - kotlin-library
+      project_name:
+        description: 'Project Name'
+        required: true
+        type: string
+      package_name:
+        description: 'Package Name'
+        required: true
+        default: 'com.example.app'
+        type: string
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create Project
+        run: |
+          if [ "${{ inputs.project_type }}" == "android" ]; then
+            echo "Creating Android project: ${{ inputs.project_name }} (${{ inputs.package_name }})"
+            
+            # Simple Android setup (Since local gradle init doesn't support android well)
+            mkdir -p app/src/main/java/$(echo ${{ inputs.package_name }} | sed 's/\//\./g')
+            mkdir -p app/src/main/res/values
+            mkdir -p app/src/main/res/layout
+            
+            cat << 'EOF' > build.gradle.kts
+            buildscript {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+                dependencies {
+                    classpath("com.android.tools.build:gradle:8.2.0")
+                    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20")
+                }
+            }
+            allprojects {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+            EOF
+            
+            cat << 'EOF' > settings.gradle.kts
+            rootProject.name = "${{ inputs.project_name }}"
+            include(":app")
+            EOF
+            
+            cat << 'EOF' > app/build.gradle.kts
+            plugins {
+                id("com.android.application")
+                id("org.jetbrains.kotlin.android")
+            }
+            
+            android {
+                namespace = "${{ inputs.package_name }}"
+                compileSdk = 34
+                
+                defaultConfig {
+                    applicationId = "${{ inputs.package_name }}"
+                    minSdk = 24
+                    targetSdk = 34
+                    versionCode = 1
+                    versionName = "1.0"
+                }
+                
+                buildTypes {
+                    release {
+                        isMinifyEnabled = false
+                        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                    }
+                }
+                
+                buildFeatures {
+                    compose = true
+                }
+                
+                composeOptions {
+                    kotlinCompilerExtensionVersion = "1.5.4"
+                }
+            }
+            
+            dependencies {
+                implementation("androidx.core:core-ktx:1.12.0")
+                implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+                implementation("androidx.activity:activity-compose:1.8.2")
+                implementation(platform("androidx.compose:compose-bom:2024.02.00"))
+                implementation("androidx.compose.ui:ui")
+                implementation("androidx.compose.ui:ui-graphics")
+                implementation("androidx.compose.ui:ui-tooling-preview")
+                implementation("androidx.compose.material3:material3")
+            }
+            EOF
+
+            # Create gradle wrapper
+            gradle wrapper
+
+          else
+            echo "Creating ${{ inputs.project_type }} project: ${{ inputs.project_name }}"
+            gradle init \
+              --type ${{ inputs.project_type }} \
+              --dsl kotlin \
+              --test-framework junit-jupiter \
+              --project-name "${{ inputs.project_name }}" \
+              --package "${{ inputs.package_name }}"
+          fi
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          
+          # Only commit if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: initialize ${{ inputs.project_type }} project via krinry create"
+            git push
+            echo "✅ Project scaffolded and pushed to repository."
+          else
+            echo "No changes to commit."
+          fi

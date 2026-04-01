@@ -32,6 +32,50 @@ krinry --version        # Show version
 krinry update           # Update CLI
 ```
 
+### Overview
+The objective is to expand the capabilities of the `krinry-cli` tool to support comprehensive cloud-based project creation and building for **Android (Gradle/Kotlin/Java)** and **Flutter** via **GitHub Actions**. This implementation enables fully cloud-native workflows on environments like Termux, eliminating local hardware constraints for compiling large projects like Android apps.
+
+## Target Audience
+Mobile app developers, specifically Android and Flutter developers leveraging low-power or terminal-based environments (like Termux on Android) and favoring cloud CI/CD logic instead of local compilation.
+
+## Key Features Added
+
+1.  **Gradle Cloud Builds (Android/Java/Kotlin):**
+    *   `krinry gradle assembleDebug` / `krinry gradle test` / etc.: Invokes corresponding gradle tasks on GitHub Actions, downloading outputs seamlessly.
+    *   `krinry gradle init`: Initializes a `.github/workflows/krinry-gradle-build.yml` file to handle gradle tasks.
+    *   `krinry gradle doctor`: Checks GitHub CLI authentication and repo configuration.
+    
+2.  **Cloud-Based Project Scaffolding `create`:**
+    *   **Gradle**: `krinry gradle create <name>` dynamically scaffolds a new Android (Kotlin + Jetpack Compose) or pure Kotlin/Java repository directly on GitHub and pulls the fresh repository back locally.
+    *   **Flutter**: `krinry flutter create <name>` generates a new Flutter application purely via GitHub Actions, bypassing the need for an installed local SDK to orchestrate the structure.
+
+3.  **Preserved existing local configurations:**
+    *   Keeps Flutter installation scripts intact for users who want to run `flutter run web` locally.
+
+## Architecture
+
+*   **Language:** Bash (for the CLI), GitHub Actions (YAML for cloud compute).
+*   **Infrastructure:** Depends on the `gh` (GitHub CLI) for creating repositories, triggering workflows, and downloading artifacts.
+*   **Structure Update:** 
+    *   `bin/krinry`: The entry point router passes parameters to `run_gradle_tool`.
+    *   `lib/gradle/*.sh`: Houses the logic for init, doctor, build, and create.
+    *   `workflows/krinry-gradle-build.yml` & `krinry-gradle-create.yml`: Remote runner configuration.
+
+## Deployment & Verification
+To test the tool:
+1. `krinry gradle create test_android_app`
+   Expected: Requests creation of github repo, pushes a create workflow, GitHub runner generates a new Compose Android app and pushes it to main, CLI pulls down the codebase.
+2. `cd test_android_app && krinry gradle assembleDebug`
+   Expected: Triggers Krinry Gradle build workflow, waits for completion, downloads `.apk` file into `app/build/outputs/apk/debug/`.
+3. `krinry flutter create test_flutter_app`
+   Expected: Scaffolds a flutter app in the cloud, pulls code down.
+4. `cd test_flutter_app && krinry flutter build apk`
+   Expected: Builds the Flutter apk via cloud. CLI → Plugin Dispatcher (lib/installers/*.sh)
+                                 │
+                                 ├──> Flutter Tool → GitHub Action → APK
+                                 ├──> Qwen Install
+                                 └──> Shell Tools Install
+
 ### Flutter Tool Commands
 ```bash
 krinry flutter install       # Install Flutter SDK

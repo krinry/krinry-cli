@@ -72,6 +72,13 @@ show_help() {
     echo "  krinry flutter init         Initialize cloud build"
     echo "  krinry flutter build apk    Build APK in cloud"
     echo "  krinry flutter run web      Run Flutter web server"
+    echo "  krinry flutter create       Create Flutter project via cloud"
+    echo ""
+    echo -e "${BOLD}GRADLE COMMANDS (Android/Java/Kotlin):${NC}"
+    echo "  krinry gradle doctor        Check system requirements"
+    echo "  krinry gradle init          Initialize cloud build"
+    echo "  krinry gradle assembleDebug Build Android app in cloud"
+    echo "  krinry gradle create        Create Gradle project via cloud"
     echo ""
     echo -e "${BOLD}EXAMPLES:${NC}"
     echo "  krinry install flutter"
@@ -119,6 +126,10 @@ main() {
             shift
             run_flutter_tool "$@"
             ;;
+        gradle)
+            shift
+            run_gradle_tool "$@"
+            ;;
         *)
             # Check if it's a tool in the tools directory
             if [[ -f "${TOOLS_DIR}/$1/main.sh" ]]; then
@@ -156,6 +167,10 @@ run_flutter_tool() {
         doctor)
             source "${LIB_DIR}/flutter/doctor.sh"
             cmd_doctor "${@:2}"
+            ;;
+        create)
+            source "${LIB_DIR}/flutter/create.sh"
+            cmd_create "${@:2}"
             ;;
         init)
             source "${LIB_DIR}/flutter/init.sh"
@@ -220,6 +235,7 @@ show_flutter_help() {
     echo "  build apk          Build APK using cloud (GitHub Actions)"
     echo "  build appbundle    Build AAB using cloud (GitHub Actions)"
     echo "  run web            Run Flutter web server (local)"
+    echo "  create             Create new Flutter project via cloud"
     echo ""
     echo -e "${BOLD}BUILD OPTIONS:${NC}"
     echo "  --debug            Debug build (default)"
@@ -236,6 +252,43 @@ show_flutter_help() {
     echo "  krinry flutter build appbundle        # App Bundle"
     echo "  krinry flutter build apk --install    # Build & install"
     echo ""
+}
+
+# ============ Gradle Tool ============
+
+run_gradle_tool() {
+    # No subcommand - show gradle help
+    if [[ $# -eq 0 ]]; then
+        source "${LIB_DIR}/gradle/build.sh"
+        show_build_help
+        exit 0
+    fi
+    
+    case "$1" in
+        --help|-h)
+            source "${LIB_DIR}/gradle/build.sh"
+            show_build_help
+            exit 0
+            ;;
+        doctor)
+            source "${LIB_DIR}/gradle/doctor.sh"
+            cmd_doctor "${@:2}"
+            ;;
+        init)
+            source "${LIB_DIR}/gradle/init.sh"
+            cmd_init "${@:2}"
+            ;;
+        create)
+            shift
+            source "${LIB_DIR}/gradle/create.sh"
+            cmd_create "$@"
+            ;;
+        *)
+            # Pass all other commands as gradle tasks to build
+            source "${LIB_DIR}/gradle/build.sh"
+            cmd_build "$@"
+            ;;
+    esac
 }
 
 # ============ Install Tool ============

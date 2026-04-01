@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="#flutter-commands">Flutter</a> •
+  <a href="#gradle-commands">Gradle</a> •
   <a href="#installation">Install</a> •
   <a href="#usage">Usage</a> •
   <a href="#contributing">Contributing</a>
@@ -117,6 +118,10 @@ krinry flutter init
 # Check system setup
 krinry flutter doctor
 
+# Create a new Flutter project (runs flutter create in cloud)
+krinry flutter create myapp
+krinry flutter create myplugin --template plugin
+
 # Build APK (cloud)
 krinry flutter build apk --release
 krinry flutter build apk --debug
@@ -127,6 +132,32 @@ krinry flutter build appbundle --release
 
 # Run web server locally
 krinry flutter run web
+```
+
+### Gradle Commands (Android/Java/Kotlin)
+
+```bash
+# Initialize cloud builds in your project
+krinry gradle init
+
+# Check system setup
+krinry gradle doctor
+
+# Create a new Android/Gradle project (cloud)
+krinry gradle create myapp --type android
+krinry gradle create myapp --type kotlin-application
+
+# Build APKs (cloud)
+krinry gradle assembleDebug
+krinry gradle assembleRelease
+
+# Build App Bundle (cloud)
+krinry gradle bundleRelease
+
+# Run tests or any other gradle task (cloud)
+krinry gradle test
+krinry gradle lint
+krinry gradle clean
 ```
 
 ### Build Options
@@ -175,13 +206,24 @@ Your Phone (Termux)          GitHub Actions
 │   ├── install.sh       # Auto-discovery plugin dispatcher
 │   ├── installers/      # 📦 PLUGINS: Drop a .sh file here to add a tool!
 │   │   ├── qwen.sh
-│   │   ├── flutter.sh
 │   │   └── ...
+│   ├── gradle/          # Dedicated gradle core logic
+│   │   ├── init.sh
+│   │   ├── build.sh
+│   │   ├── create.sh
+│   │   └── doctor.sh
 │   └── flutter/         # Dedicated flutter core logic
 │       ├── init.sh
-│       └── build.sh
+│       ├── build.sh
+│       ├── create.sh
+│       ├── run.sh
+│       ├── doctor.sh
+│       └── install.sh
 └── workflows/
-    └── krinry-flutter-build.yml
+    ├── krinry-flutter-build.yml
+    ├── krinry-flutter-create.yml
+    ├── krinry-gradle-build.yml
+    └── krinry-gradle-create.yml
 ```
 
 ---
